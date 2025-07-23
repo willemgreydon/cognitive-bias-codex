@@ -112,15 +112,16 @@ export function RadialDiagram({ width = 1200, height = 800 }: RadialDiagramProps
     }
   }, [isMobile]);
 
-  // Wheel zoom for desktop
+  // Wheel zoom for desktop - but only when detail panel is not open
   const handleWheel = useCallback((e: React.WheelEvent) => {
-    if (isMobile) return; // Disable wheel zoom on mobile, use pinch instead
+    // Don't handle wheel events on mobile or when detail panel is open
+    if (isMobile || selectedBias) return;
     
     e.preventDefault();
     const delta = e.deltaY * -0.001;
     const newZoom = Math.min(Math.max(0.5, zoomLevel + delta), 3);
     setZoomLevel(newZoom);
-  }, [zoomLevel, isMobile]);
+  }, [zoomLevel, isMobile, selectedBias]);
 
   // Calculate positions for category labels and bias nodes
   const getPositionsForCategory = (category: BiasCategory, categoryIndex: number) => {

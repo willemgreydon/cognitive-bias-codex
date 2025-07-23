@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Filter, X } from 'lucide-react';
 import { BiasCategory } from '../data/cognitive-biases';
@@ -18,6 +18,58 @@ interface CategoryFilterProps {
 export function CategoryFilter({ categories, activeCategories, onToggleCategory, isMobile = false }: CategoryFilterProps) {
   const [showFilter, setShowFilter] = useState(false);
   const activeCount = activeCategories.length;
+  const filterRef = useRef<HTMLDivElement>(null);
+
+  // Close filter when clicking outside (desktop)
+  useEffect(() => {
+    if (!isMobile && showFilter) {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+          setShowFilter(false);
+        }
+      };
+
+      // Small delay to prevent immediate closing when opening
+      const timer = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+      }, 100);
+
+      return () => {
+        clearTimeout(timer);
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showFilter, isMobile]);
+
+  // Close filter on Escape key
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showFilter) {
+        setShowFilter(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [showFilter]);
+
+  const toggleAllCategories = () => {
+    if (activeCount === categories.length) {
+      // Deselect all
+      categories.forEach(cat => {
+        if (activeCategories.includes(cat.id)) {
+          onToggleCategory(cat.id);
+        }
+      });
+    } else {
+      // Select all
+      categories.forEach(cat => {
+        if (!activeCategories.includes(cat.id)) {
+          onToggleCategory(cat.id);
+        }
+      });
+    }
+  };
 
   if (isMobile) {
     return (
@@ -76,21 +128,7 @@ export function CategoryFilter({ categories, activeCategories, onToggleCategory,
                       variant="outline"
                       size="sm"
                       className="w-full touch-manipulation"
-                      onClick={() => {
-                        if (activeCount === categories.length) {
-                          categories.forEach(cat => {
-                            if (activeCategories.includes(cat.id)) {
-                              onToggleCategory(cat.id);
-                            }
-                          });
-                        } else {
-                          categories.forEach(cat => {
-                            if (!activeCategories.includes(cat.id)) {
-                              onToggleCategory(cat.id);
-                            }
-                          });
-                        }
-                      }}
+                      onClick={toggleAllCategories}
                     >
                       {activeCount === categories.length ? 'Deselect All' : 'Select All'}
                     </Button>
@@ -99,14 +137,14 @@ export function CategoryFilter({ categories, activeCategories, onToggleCategory,
                       {categories.map((category) => (
                         <div key={category.id} className="flex items-start space-x-3 p-3 rounded-lg bg-slate-50">
                           <Checkbox
-                            id={category.id}
+                            id={`mobile-${category.id}`}
                             checked={activeCategories.includes(category.id)}
                             onCheckedChange={() => onToggleCategory(category.id)}
                             className="mt-1"
                           />
                           <div className="grid gap-1.5 leading-none flex-1">
                             <label
-                              htmlFor={category.id}
+                              htmlFor={`mobile-${category.id}`}
                               className="font-medium leading-none cursor-pointer text-sm"
                               style={{ color: category.color }}
                             >
@@ -135,14 +173,14 @@ export function CategoryFilter({ categories, activeCategories, onToggleCategory,
     );
   }
 
-  // Desktop popover (existing design)
+  // Desktop popover (improved)
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.6 }}
     >
-      <div style={{ position: 'relative' }}>
+      <div ref={filterRef} style={{ position: 'relative' }}>
         <Button 
           variant="outline" 
           size="sm" 
@@ -155,78 +193,67 @@ export function CategoryFilter({ categories, activeCategories, onToggleCategory,
         
         <AnimatePresence>
           {showFilter && (
-            <>
-              {/* Backdrop */}
-              <div 
-                className="fixed inset-0 z-25"
-                onClick={() => setShowFilter(false)}
-              />
-              
-              {/* Popover */}
-              <motion.div
-                initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                transition={{ duration: 0.2 }}
-                className="absolute top-full left-0 mt-2 z-30"
-              >
-                <Card className="w-80 p-4">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4>Filter Categories</h4>
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="absolute top-full left-0 mt-2 z-40"
+              style={{ pointerEvents: 'all' }}
+            >
+              <Card className="w-80 p-4 shadow-lg">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Filter Categories</h4>
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => {
-                          if (activeCount === categories.length) {
-                            categories.forEach(cat => {
-                              if (activeCategories.includes(cat.id)) {
-                                onToggleCategory(cat.id);
-                              }
-                            });
-                          } else {
-                            categories.forEach(cat => {
-                              if (!activeCategories.includes(cat.id)) {
-                                onToggleCategory(cat.id);
-                              }
-                            });
-                          }
-                        }}
+                        onClick={toggleAllCategories}
+                        className="text-xs"
                       >
                         {activeCount === categories.length ? 'Deselect All' : 'Select All'}
                       </Button>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      {categories.map((category) => (
-                        <div key={category.id} className="flex items-start space-x-3">
-                          <Checkbox
-                            id={category.id}
-                            checked={activeCategories.includes(category.id)}
-                            onCheckedChange={() => onToggleCategory(category.id)}
-                          />
-                          <div className="grid gap-1.5 leading-none">
-                            <label
-                              htmlFor={category.id}
-                              className="font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                              style={{ color: category.color }}
-                            >
-                              {category.name}
-                            </label>
-                            <p className="text-xs text-muted-foreground">
-                              {category.description}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {category.biases.length} biases
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowFilter(false)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                </Card>
-              </motion.div>
-            </>
+                  
+                  <div className="space-y-3">
+                    {categories.map((category) => (
+                      <div key={category.id} className="flex items-start space-x-3">
+                        <Checkbox
+                          id={`desktop-${category.id}`}
+                          checked={activeCategories.includes(category.id)}
+                          onCheckedChange={() => onToggleCategory(category.id)}
+                        />
+                        <div className="grid gap-1.5 leading-none flex-1">
+                          <label
+                            htmlFor={`desktop-${category.id}`}
+                            className="font-medium leading-none cursor-pointer"
+                            style={{ color: category.color }}
+                          >
+                            {category.name}
+                          </label>
+                          <p className="text-xs text-muted-foreground">
+                            {category.description}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {category.biases.length} biases
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
