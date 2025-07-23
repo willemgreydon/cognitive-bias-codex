@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Cognitive Bias Codex - Interactive Radial Diagram</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@10/dist/framer-motion.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Tailwind CSS base styles and custom variables */
+        :root {
+            --font-size: 14px;
+            --background: #ffffff;
+            --foreground: oklch(0.145 0 0);
+            --card: #ffffff;
+            --card-foreground: oklch(0.145 0 0);
+            --popover: oklch(1 0 0);
+            --popover-foreground: oklch(0.145 0 0);
+            --primary: #030213;
+            --primary-foreground: oklch(1 0 0);
+            --secondary: oklch(0.95 0.0058 264.53);
+            --secondary-foreground: #030213;
+            --muted: #ececf0;
+            --muted-foreground: #717182;
+            --accent: #e9ebef;
+            --accent-foreground: #030213;
+            --destructive: #d4183d;
+            --destructive-foreground: #ffffff;
+            --border: rgba(0, 0, 0, 0.1);
+            --input: transparent;
+            --input-background: #f3f3f5;
+            --switch-background: #cbced4;
+            --font-weight-medium: 500;
+            --font-weight-normal: 400;
+            --ring: oklch(0.708 0 0);
+            --radius: 0.625rem;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom right, #f8fafc, #f1f5f9);
+            font-size: var(--font-size);
+            overflow: hidden;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Prevent scrolling and zooming on mobile */
+        html, body {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overscroll-behavior: none;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-primary {
+            background-color: #030213;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #1f2937;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-outline:hover {
+            background-color: #f9fafb;
+        }
+
+        .btn-ghost {
+            background-color: transparent;
+            color: #374151;
+        }
+
+        .btn-ghost:hover {
+            background-color: #f3f4f6;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            padding: 1.5rem 1.5rem 0.75rem 1.5rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .card-content {
+            padding: 1.5rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+
+        .text-muted {
+            color: #6b7280;
+        }
+
+        .touch-friendly {
+            min-height: 44px;
+            min-width: 44px;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            :root {
+                --font-size: 16px; /* Better readability on mobile */
+            }
+            
+            .mobile-full-screen {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 50;
+            }
+            
+            body {
+                touch-action: none;
+            }
+        }
+
+        @media (min-width: 769px) {
+            body {
+                touch-action: auto;
+            }
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        .fixed { position: fixed; }
+        .absolute { position: absolute; }
+        .relative { position: relative; }
+        .z-10 { z-index: 10; }
+        .z-20 { z-index: 20; }
+        .z-30 { z-index: 30; }
+        .z-40 { z-index: 40; }
+        .z-50 { z-index: 50; }
+
+        /* Improved touch handling */
+        * {
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Ensure clickable elements work */
+        [data-bias-node] {
+            pointer-events: all !important;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useRef, useEffect, useCallback } = React;
+        const { motion, AnimatePresence } = Motion;
+
+        // Mobile detection hook
+        const useIsMobile = () => {
+            const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+            
+            useEffect(() => {
+                const handleResize = () => {
+                    setIsMobile(window.innerWidth < 768);
+                };
+                
+                window.addEventListener('resize', handleResize);
+                return () => window.removeEventListener('resize', handleResize);
+            }, []);
+            
+            return isMobile;
+        };
+
+        // Cognitive Biases Data
+        const biasCategories = [
+            {
+                id: "too-much-info",
+                name: "Too Much Information",
+                description: "We notice things already primed in memory or repeated often",
+                color: "#4A90A4",
+                biases: [
+                    {
+                        id: "availability-heuristic",
+                        name: "Availability Heuristic",
+                        description: "We overestimate the likelihood of events based on how easily examples come to mind",
+                        example: "Thinking shark attacks are more common after seeing news coverage",
+                        category: "too-much-info"
+                    },
+                    {
+                        id: "confirmation-bias",
+                        name: "Confirmation Bias",
+                        description: "We search for, interpret, and recall information that confirms our preexisting beliefs",
+                        example: "Only reading news sources that align with your political views",
+                        category: "too-much-info"
+                    },
+                    {
+                        id: "anchoring-bias",
+                        name: "Anchoring Bias",
+                        description: "We rely too heavily on the first piece of information encountered",
+                        example: "The first price you see for a product influences your perception of value",
+                        category: "too-much-info"
+                    },
+                    {
+                        id: "recency-effect",
+                        name: "Recency Effect",
+                        description: "We better remember the most recently presented information",
+                        example: "Remembering the last few items on a shopping list better than the middle ones",
+                        category: "too-much-info"
+                    }
+                ]
+            },
+            {
+                id: "not-enough-meaning",
+                name: "Not Enough Meaning",
+                description: "We fill in characteristics from stereotypes, generalities, and prior histories",
+                color: "#5B9BD5",
+                biases: [
+                    {
+                        id: "stereotyping",
+                        name: "Stereotyping",
+                        description: "We expect a member of a group to have certain characteristics without actual knowledge",
+                        example: "Assuming someone's abilities based on their age or appearance",
+                        category: "not-enough-meaning"
+                    },
+                    {
+                        id: "halo-effect",
+                        name: "Halo Effect",
+                        description: "Our overall impression of a person influences how we feel about their character",
+                        example: "Thinking attractive people are more competent",
+                        category: "not-enough-meaning"
+                    },
+                    {
+                        id: "fundamental-attribution-error",
+                        name: "Fundamental Attribution Error",
+                        description: "We attribute others' behavior to their character but our own to circumstances",
+                        example: "Thinking someone is late because they're disorganized, not traffic",
+                        category: "not-enough-meaning"
+                    },
+                    {
+                        id: "projection-bias",
+                        name: "Projection Bias",
+                        description: "We assume others share our beliefs, values, and opinions",
+                        example: "Thinking everyone finds the same things funny as you do",
+                        category: "not-enough-meaning"
+                    }
+                ]
+            },
+            {
+                id: "need-to-act-fast",
+                name: "Need To Act Fast",
+                description: "We favor simple-looking options and complete information over complex, ambiguous options",
+                color: "#70AD47",
+                biases: [
+                    {
+                        id: "default-effect",
+                        name: "Default Effect",
+                        description: "We tend to accept the default option when making decisions",
+                        example: "Sticking with pre-selected options in software or insurance plans",
+                        category: "need-to-act-fast"
+                    },
+                    {
+                        id: "loss-aversion",
+                        name: "Loss Aversion",
+                        description: "We prefer avoiding losses over acquiring equivalent gains",
+                        example: "Being more upset about losing $50 than happy about finding $50",
+                        category: "need-to-act-fast"
+                    },
+                    {
+                        id: "sunk-cost-fallacy",
+                        name: "Sunk Cost Fallacy",
+                        description: "We continue investing in something based on previously invested resources",
+                        example: "Continuing to watch a boring movie because you already paid for it",
+                        category: "need-to-act-fast"
+                    },
+                    {
+                        id: "urgency-effect",
+                        name: "Urgency Effect",
+                        description: "We prioritize tasks with shorter deadlines over more important tasks",
+                        example: "Doing urgent but unimportant emails before important long-term projects",
+                        category: "need-to-act-fast"
+                    }
+                ]
+            },
+            {
+                id: "what-should-we-remember",
+                name: "What Should We Remember?",
+                description: "We store memories differently based on how they were experienced",
+                color: "#A5A5A5",
+                biases: [
+                    {
+                        id: "peak-end-rule",
+                        name: "Peak-End Rule",
+                        description: "We judge experiences largely based on how they felt at their peak and end",
+                        example: "Remembering a vacation by its best moment and how it ended",
+                        category: "what-should-we-remember"
+                    },
+                    {
+                        id: "rosy-retrospection",
+                        name: "Rosy Retrospection",
+                        description: "We remember past events as being more positive than they actually were",
+                        example: "Thinking school days were better than they really were",
+                        category: "what-should-we-remember"
+                    },
+                    {
+                        id: "google-effect",
+                        name: "Google Effect",
+                        description: "We forget information that we know is easily accessible",
+                        example: "Not remembering phone numbers because they're saved in your contacts",
+                        category: "what-should-we-remember"
+                    },
+                    {
+                        id: "serial-position-effect",
+                        name: "Serial Position Effect",
+                        description: "We remember the first and last items in a series better than the middle items",
+                        example: "Remembering the beginning and end of a presentation but not the middle",
+                        category: "what-should-we-remember"
+                    }
+                ]
+            }
+        ];
+
+        // Icon Components
+        const BrainIcon = ({ size = 80, className = "" }) => (
+            <svg 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+                className={className}
+            >
+                <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/>
+                <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>
+            </svg>
+        );
+
+        const CloseIcon = ({ size = 16 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m18 6-12 12"/>
+                <path d="m6 6 12 12"/>
+            </svg>
+        );
+
+        const ZoomInIcon = ({ size = 16 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+                <line x1="11" y1="8" x2="11" y2="14"/>
+                <line x1="8" y1="11" x2="14" y2="11"/>
+            </svg>
+        );
+
+        const ZoomOutIcon = ({ size = 16 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+                <line x1="8" y1="11" x2="14" y2="11"/>
+            </svg>
+        );
+
+        const FilterIcon = ({ size = 16 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46"/>
+            </svg>
+        );
+
+        const ArrowLeftIcon = ({ size = 16 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m12 19-7-7 7-7"/>
+                <path d="M19 12H5"/>
+            </svg>
+        );
+
+        // BiasNode Component with fixed interaction handling
+        const BiasNode = ({ bias, category, x, y, isHovered, isSelected, onHover, onSelect, animationDelay, isMobile }) => {
+            const baseRadius = isMobile ? 16 : 12;
+            const nodeRadius = isHovered ? baseRadius + 6 : isSelected ? baseRadius + 4 : baseRadius;
+            const touchRadius = isMobile ? 28 : 20;
+            
+            const labelOffset = isMobile ? 20 : 16;
+            const labelWidth = isMobile ? 120 : 120;
+            const labelHeight = isMobile ? 50 : 40;
+
+            // Fixed event handling for both desktop and mobile
+            const handleClick = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onSelect(bias);
+            };
+
+            const handleMouseEnter = () => {
+                if (!isMobile) {
+                    onHover(bias);
+                }
+            };
+
+            const handleMouseLeave = () => {
+                if (!isMobile) {
+                    onHover(null);
+                }
+            };
+
+            return (
+                <motion.g
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ 
+                        duration: 0.4, 
+                        delay: animationDelay,
+                        type: "spring",
+                        stiffness: 200
+                    }}
+                    style={{ cursor: 'pointer' }}
+                    whileHover={!isMobile ? { scale: 1.1 } : {}}
+                    whileTap={{ scale: 0.95 }}
+                    data-bias-node="true"
+                >
+                    <circle
+                        cx={x}
+                        cy={y}
+                        r={touchRadius}
+                        fill="transparent"
+                        style={{ 
+                            pointerEvents: 'all',
+                            cursor: 'pointer'
+                        }}
+                        onClick={handleClick}
+                        onMouseEnter={handleMouseEnter}
+                        onMouseLeave={handleMouseLeave}
+                    />
+
+                    {(isHovered || isSelected) && (
+                        <motion.circle
+                            cx={x}
+                            cy={y}
+                            r={nodeRadius + (isMobile ? 12 : 8)}
+                            fill={category.color}
+                            opacity="0.25"
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ duration: 0.2 }}
+                            style={{ pointerEvents: 'none' }}
+                        />
+                    )}
+                    
+                    <motion.circle
+                        cx={x}
+                        cy={y}
+                        r={nodeRadius}
+                        fill={category.color}
+                        stroke="white"
+                        strokeWidth={isMobile ? "3" : "2"}
+                        opacity={isSelected ? 1 : 0.9}
+                        animate={{ r: nodeRadius }}
+                        transition={{ duration: 0.2 }}
+                        style={{filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))', pointerEvents: 'none'}}
+                    />
+                    
+                    <motion.foreignObject
+                        x={x - labelWidth / 2}
+                        y={y + nodeRadius + labelOffset}
+                        width={labelWidth}
+                        height={labelHeight}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3, delay: animationDelay + 0.2 }}
+                        style={{ 
+                            overflow: 'visible',
+                            pointerEvents: 'none'
+                        }}
+                    >
+                        <div style={{ 
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            justifyContent: 'center',
+                            width: '100%',
+                            height: '100%'
+                        }}>
+                            <div
+                                style={{ 
+                                    color: category.color,
+                                    fontWeight: isHovered || isSelected ? 600 : 500,
+                                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                    backdropFilter: 'blur(4px)',
+                                    border: `1px solid ${category.color}20`,
+                                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                                    fontSize: isMobile ? '11px' : '12px',
+                                    lineHeight: '1.2',
+                                    maxWidth: '100%',
+                                    wordWrap: 'break-word',
+                                    hyphens: 'auto',
+                                    textAlign: 'center',
+                                    padding: '4px 8px',
+                                    borderRadius: '6px'
+                                }}
+                            >
+                                {bias.name}
+                            </div>
+                        </div>
+                    </motion.foreignObject>
+                    
+                    {isSelected && (
+                        <motion.circle
+                            cx={x}
+                            cy={y}
+                            r={nodeRadius + (isMobile ? 8 : 6)}
+                            fill="none"
+                            stroke={category.color}
+                            strokeWidth={isMobile ? "3" : "2"}
+                            strokeDasharray="4 4"
+                            initial={{ rotate: 0 }}
+                            animate={{ rotate: 360 }}
+                            transition={{ 
+                                duration: 8, 
+                                repeat: Infinity, 
+                                ease: "linear" 
+                            }}
+                            style={{ pointerEvents: 'none' }}
+                        />
+                    )}
+                </motion.g>
+            );
+        };
+
+        // DetailPanel Component
+        const DetailPanel = ({ bias, category, onClose, isMobile }) => {
+            if (isMobile) {
+                return (
+                    <motion.div
+                        initial={{ y: '100%' }}
+                        animate={{ y: 0 }}
+                        exit={{ y: '100%' }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                        className="mobile-full-screen"
+                        style={{ background: 'white', overflow: 'hidden' }}
+                    >
+                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                            <div 
+                                style={{ 
+                                    padding: '1rem', 
+                                    borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+                                    backgroundColor: `${category.color}08`,
+                                    position: 'sticky',
+                                    top: 0,
+                                    zIndex: 10
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <button
+                                        className="btn btn-ghost touch-friendly"
+                                        onClick={onClose}
+                                        style={{ height: '40px', width: '40px', padding: 0 }}
+                                    >
+                                        <ArrowLeftIcon size={20} />
+                                    </button>
+                                    
+                                    <div style={{ flex: 1, margin: '0 12px', textAlign: 'center' }}>
+                                        <div 
+                                            className="badge"
+                                            style={{ 
+                                                marginBottom: '4px',
+                                                backgroundColor: `${category.color}20`,
+                                                color: category.color,
+                                                fontSize: '10px'
+                                            }}
+                                        >
+                                            {category.name}
+                                        </div>
+                                        <h2 
+                                            style={{ 
+                                                fontSize: '18px',
+                                                lineHeight: '1.2',
+                                                color: category.color,
+                                                margin: 0
+                                            }}
+                                        >
+                                            {bias.name}
+                                        </h2>
+                                    </div>
+                                    
+                                    <div style={{ width: '40px' }} />
+                                </div>
+                            </div>
+
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '512px', margin: '0 auto' }}>
+                                    <div className="card">
+                                        <div className="card-header" style={{ paddingBottom: '12px' }}>
+                                            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', fontWeight: 500, margin: 0 }}>
+                                                📖 What is it?
+                                            </h3>
+                                        </div>
+                                        <div className="card-content">
+                                            <p style={{ lineHeight: '1.6', fontSize: '14px', margin: 0 }}>
+                                                {bias.description}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="card">
+                                        <div className="card-header" style={{ paddingBottom: '12px' }}>
+                                            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', fontWeight: 500, margin: 0 }}>
+                                                💡 Real-world example
+                                            </h3>
+                                        </div>
+                                        <div className="card-content">
+                                            <p style={{ lineHeight: '1.6', fontSize: '14px', margin: 0 }}>
+                                                {bias.example}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="card">
+                                        <div className="card-header" style={{ paddingBottom: '12px' }}>
+                                            <h3 style={{ fontSize: '16px', fontWeight: 500, margin: 0 }}>Why does this happen?</h3>
+                                        </div>
+                                        <div className="card-content">
+                                            <p className="text-muted" style={{ lineHeight: '1.6', fontSize: '14px', margin: 0 }}>
+                                                This cognitive bias occurs because our brains are constantly trying to 
+                                                process vast amounts of information efficiently. To save mental energy, 
+                                                we rely on mental shortcuts and patterns that worked in the past, 
+                                                but sometimes lead us astray in new situations.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="card">
+                                        <div className="card-header" style={{ paddingBottom: '12px' }}>
+                                            <h3 style={{ fontSize: '16px', fontWeight: 500, margin: 0 }}>How to recognize it</h3>
+                                        </div>
+                                        <div className="card-content">
+                                            <ul className="text-muted" style={{ lineHeight: '1.6', fontSize: '14px', paddingLeft: '1rem', margin: 0 }}>
+                                                <li>Pay attention to your first instincts and question them</li>
+                                                <li>Seek out opposing viewpoints deliberately</li>
+                                                <li>Take time to reflect before making important decisions</li>
+                                                <li>Ask others for their perspective on the situation</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ borderTop: '1px solid rgba(0, 0, 0, 0.1)', padding: '1rem', background: '#f8fafc' }}>
+                                <p style={{ fontSize: '12px', color: '#6b7280', textAlign: 'center', margin: 0 }}>
+                                    Part of the Cognitive Bias Codex • Swipe down or tap back to explore more
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
+                );
+            }
+
+            // Desktop version
+            return (
+                <motion.div
+                    initial={{ x: '100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '100%' }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    style={{ 
+                        position: 'fixed',
+                        right: 0, 
+                        top: 0, 
+                        height: '100%', 
+                        width: '384px', 
+                        background: 'white', 
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                        zIndex: 40,
+                        borderLeft: '1px solid rgba(0, 0, 0, 0.1)'
+                    }}
+                >
+                    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                        <div 
+                            style={{ 
+                                padding: '1.5rem', 
+                                borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+                                backgroundColor: `${category.color}15`
+                            }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                                <div style={{ flex: 1 }}>
+                                    <div 
+                                        className="badge"
+                                        style={{ 
+                                            marginBottom: '12px',
+                                            backgroundColor: `${category.color}25`,
+                                            color: category.color
+                                        }}
+                                    >
+                                        {category.name}
+                                    </div>
+                                    <h2 
+                                        style={{ 
+                                            marginBottom: '8px', 
+                                            lineHeight: '1.2',
+                                            color: category.color,
+                                            fontSize: '20px',
+                                            fontWeight: 500
+                                        }}
+                                    >
+                                        {bias.name}
+                                    </h2>
+                                    <p className="text-muted" style={{ margin: 0 }}>
+                                        {category.description}
+                                    </p>
+                                </div>
+                                <button
+                                    className="btn btn-ghost"
+                                    onClick={onClose}
+                                    style={{ marginLeft: '8px', height: '32px', width: '32px', padding: 0 }}
+                                >
+                                    <CloseIcon size={16} />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                <div className="card">
+                                    <div className="card-header">
+                                        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', fontWeight: 500, margin: 0 }}>
+                                            📖 What is it?
+                                        </h3>
+                                    </div>
+                                    <div className="card-content">
+                                        <p style={{ lineHeight: '1.6', margin: 0 }}>
+                                            {bias.description}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="card">
+                                    <div className="card-header">
+                                        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', fontWeight: 500, margin: 0 }}>
+                                            💡 Real-world example
+                                        </h3>
+                                    </div>
+                                    <div className="card-content">
+                                        <p style={{ lineHeight: '1.6', margin: 0 }}>
+                                            {bias.example}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="card">
+                                    <div className="card-header">
+                                        <h3 style={{ fontSize: '16px', fontWeight: 500, margin: 0 }}>Why does this happen?</h3>
+                                    </div>
+                                    <div className="card-content">
+                                        <p className="text-muted" style={{ lineHeight: '1.6', margin: 0 }}>
+                                            This cognitive bias occurs because our brains are constantly trying to 
+                                            process vast amounts of information efficiently. To save mental energy, 
+                                            we rely on mental shortcuts and patterns that worked in the past, 
+                                            but sometimes lead us astray in new situations.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="card">
+                                    <div className="card-header">
+                                        <h3 style={{ fontSize: '16px', fontWeight: 500, margin: 0 }}>How to recognize it</h3>
+                                    </div>
+                                    <div className="card-content">
+                                        <ul className="text-muted" style={{ lineHeight: '1.6', paddingLeft: '1rem', margin: 0 }}>
+                                            <li>Pay attention to your first instincts and question them</li>
+                                            <li>Seek out opposing viewpoints deliberately</li>
+                                            <li>Take time to reflect before making important decisions</li>
+                                            <li>Ask others for their perspective on the situation</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ borderTop: '1px solid rgba(0, 0, 0, 0.1)', padding: '1rem', background: '#f8fafc' }}>
+                            <p style={{ fontSize: '12px', color: '#6b7280', textAlign: 'center', margin: 0 }}>
+                                Part of the Cognitive Bias Codex • Click outside to explore more biases
+                            </p>
+                        </div>
+                    </div>
+                </motion.div>
+            );
+        };
+
+        // Main RadialDiagram Component with fixed interactions
+        const RadialDiagram = () => {
+            const [selectedBias, setSelectedBias] = useState(null);
+            const [hoveredBias, setHoveredBias] = useState(null);
+            const [activeCategories, setActiveCategories] = useState(
+                biasCategories.map(cat => cat.id)
+            );
+            const [zoomLevel, setZoomLevel] = useState(1);
+            const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+            const [isDragging, setIsDragging] = useState(false);
+            const [lastPointerPos, setLastPointerPos] = useState({ x: 0, y: 0 });
+            const svgRef = useRef(null);
+            const containerRef = useRef(null);
+            const isMobile = useIsMobile();
+
+            const [dimensions, setDimensions] = useState({ 
+                width: window.innerWidth, 
+                height: window.innerHeight 
+            });
+
+            useEffect(() => {
+                const updateDimensions = () => {
+                    setDimensions({
+                        width: window.innerWidth,
+                        height: window.innerHeight
+                    });
+                };
+
+                updateDimensions();
+                window.addEventListener('resize', updateDimensions);
+                return () => window.removeEventListener('resize', updateDimensions);
+            }, []);
+
+            const centerX = dimensions.width / 2;
+            const centerY = dimensions.height / 2;
+            
+            const scaleFactor = Math.min(dimensions.width, dimensions.height) / (isMobile ? 500 : 800);
+            const brainRadius = Math.max(40, 60 * scaleFactor);
+            const categoryRadius = Math.max(120, 160 * scaleFactor);
+            const biasRadius = Math.max(200, 280 * scaleFactor);
+
+            // Fixed pointer event handlers
+            const handlePointerDown = useCallback((e) => {
+                const target = e.target;
+                if (target.closest('button') || target.closest('[data-bias-node]')) {
+                    return;
+                }
+
+                e.preventDefault();
+                setIsDragging(true);
+                setLastPointerPos({ x: e.clientX, y: e.clientY });
+                
+                if (containerRef.current) {
+                    containerRef.current.setPointerCapture(e.pointerId);
+                }
+            }, []);
+
+            const handlePointerMove = useCallback((e) => {
+                if (!isDragging) return;
+
+                e.preventDefault();
+                const deltaX = e.clientX - lastPointerPos.x;
+                const deltaY = e.clientY - lastPointerPos.y;
+
+                setPanOffset(prev => ({
+                    x: prev.x + deltaX,
+                    y: prev.y + deltaY
+                }));
+
+                setLastPointerPos({ x: e.clientX, y: e.clientY });
+            }, [isDragging, lastPointerPos]);
+
+            const handlePointerUp = useCallback((e) => {
+                if (!isDragging) return;
+
+                e.preventDefault();
+                setIsDragging(false);
+                
+                if (containerRef.current) {
+                    containerRef.current.releasePointerCapture(e.pointerId);
+                }
+            }, [isDragging]);
+
+            const handleContextMenu = useCallback((e) => {
+                if (isMobile) {
+                    e.preventDefault();
+                }
+            }, [isMobile]);
+
+            const handleWheel = useCallback((e) => {
+                if (isMobile) return;
+                
+                e.preventDefault();
+                const delta = e.deltaY * -0.001;
+                const newZoom = Math.min(Math.max(0.5, zoomLevel + delta), 3);
+                setZoomLevel(newZoom);
+            }, [zoomLevel, isMobile]);
+
+            const getPositionsForCategory = (category, categoryIndex) => {
+                const totalCategories = biasCategories.length;
+                const categoryAngle = (categoryIndex * 2 * Math.PI) / totalCategories;
+                
+                const categoryLabelX = centerX + Math.cos(categoryAngle) * categoryRadius;
+                const categoryLabelY = centerY + Math.sin(categoryAngle) * categoryRadius;
+
+                const biasPositions = category.biases.map((bias, biasIndex) => {
+                    const biasesInCategory = category.biases.length;
+                    const angleSpread = isMobile ? Math.PI / 2.5 : Math.PI / 4;
+                    const startAngle = categoryAngle - angleSpread / 2;
+                    const biasAngle = startAngle + (biasIndex * angleSpread) / Math.max(1, biasesInCategory - 1);
+                    
+                    return {
+                        x: centerX + Math.cos(biasAngle) * biasRadius,
+                        y: centerY + Math.sin(biasAngle) * biasRadius,
+                        angle: biasAngle
+                    };
+                });
+
+                return {
+                    categoryLabel: { x: categoryLabelX, y: categoryLabelY, angle: categoryAngle },
+                    biases: biasPositions
+                };
+            };
+
+            const filteredCategories = biasCategories.filter(cat => 
+                activeCategories.includes(cat.id)
+            );
+
+            const resetView = () => {
+                setZoomLevel(1);
+                setPanOffset({ x: 0, y: 0 });
+            };
+
+            const toggleCategory = (categoryId) => {
+                setActiveCategories(prev => 
+                    prev.includes(categoryId)
+                        ? prev.filter(id => id !== categoryId)
+                        : [...prev, categoryId]
+                );
+            };
+
+            return (
+                <div 
+                    ref={containerRef}
+                    style={{ 
+                        position: 'relative', 
+                        width: '100%', 
+                        height: '100vh', 
+                        background: 'linear-gradient(to bottom right, #f8fafc, #f1f5f9)', 
+                        overflow: 'hidden',
+                        touchAction: isMobile ? 'none' : 'auto',
+                        userSelect: 'none',
+                        cursor: isDragging ? 'grabbing' : 'grab'
+                    }}
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onWheel={handleWheel}
+                    onContextMenu={handleContextMenu}
+                >
+                    {/* Controls */}
+                    <div style={{ position: 'absolute', top: isMobile ? '8px' : '16px', left: isMobile ? '8px' : '16px', zIndex: 20 }}>
+                        <motion.div
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: 0.6 }}
+                        >
+                            <button 
+                                className="btn btn-outline touch-friendly"
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: isMobile ? '12px' : '14px' }}
+                                onClick={() => {
+                                    if (activeCategories.length === biasCategories.length) {
+                                        setActiveCategories([]);
+                                    } else {
+                                        setActiveCategories(biasCategories.map(cat => cat.id));
+                                    }
+                                }}
+                            >
+                                <FilterIcon size={16} />
+                                Filter ({activeCategories.length}/{biasCategories.length})
+                            </button>
+                        </motion.div>
+                    </div>
+
+                    <div style={{ position: 'absolute', top: isMobile ? '8px' : '16px', right: isMobile ? '8px' : '16px', zIndex: 20 }}>
+                        <motion.div
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: 0.8 }}
+                        >
+                            {isMobile ? (
+                                <div className="card" style={{ padding: '6px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        <button
+                                            className="btn btn-ghost touch-friendly"
+                                            onClick={() => setZoomLevel(prev => Math.max(prev - 0.2, 0.5))}
+                                            disabled={zoomLevel <= 0.5}
+                                            style={{ height: '40px', width: '40px', padding: 0 }}
+                                        >
+                                            <ZoomOutIcon size={20} />
+                                        </button>
+                                        
+                                        <div style={{ padding: '4px 8px', fontSize: '12px', fontWeight: 500, color: '#6b7280', textAlign: 'center' }}>
+                                            {Math.round(zoomLevel * 100)}%
+                                        </div>
+                                        
+                                        <button
+                                            className="btn btn-ghost touch-friendly"
+                                            onClick={() => setZoomLevel(prev => Math.min(prev + 0.2, 3))}
+                                            disabled={zoomLevel >= 3}
+                                            style={{ height: '40px', width: '40px', padding: 0 }}
+                                        >
+                                            <ZoomInIcon size={20} />
+                                        </button>
+                                        
+                                        <div style={{ height: '1px', background: 'rgba(0, 0, 0, 0.1)', margin: '4px 8px' }} />
+                                        
+                                        <button
+                                            className="btn btn-ghost touch-friendly"
+                                            onClick={resetView}
+                                            style={{ height: '40px', width: '40px', padding: 0, fontSize: '16px' }}
+                                        >
+                                            ↻
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="card" style={{ padding: '8px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <button
+                                            className="btn btn-ghost"
+                                            onClick={() => setZoomLevel(prev => Math.max(prev - 0.2, 0.5))}
+                                            disabled={zoomLevel <= 0.5}
+                                            style={{ height: '32px', width: '32px', padding: 0 }}
+                                        >
+                                            <ZoomOutIcon size={16} />
+                                        </button>
+                                        
+                                        <div style={{ padding: '4px 12px', fontSize: '14px', fontWeight: 500, color: '#6b7280', minWidth: '60px', textAlign: 'center' }}>
+                                            {Math.round(zoomLevel * 100)}%
+                                        </div>
+                                        
+                                        <button
+                                            className="btn btn-ghost"
+                                            onClick={() => setZoomLevel(prev => Math.min(prev + 0.2, 3))}
+                                            disabled={zoomLevel >= 3}
+                                            style={{ height: '32px', width: '32px', padding: 0 }}
+                                        >
+                                            <ZoomInIcon size={16} />
+                                        </button>
+                                        
+                                        <div style={{ width: '1px', height: '24px', background: 'rgba(0, 0, 0, 0.1)', margin: '0 4px' }} />
+                                        
+                                        <button
+                                            className="btn btn-ghost"
+                                            onClick={resetView}
+                                            style={{ height: '32px', width: '32px', padding: 0 }}
+                                        >
+                                            ↻
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </motion.div>
+                    </div>
+
+                    {/* Main diagram */}
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <motion.div
+                            style={{ 
+                                scale: zoomLevel,
+                                x: panOffset.x,
+                                y: panOffset.y,
+                                transformOrigin: 'center'
+                            }}
+                            animate={{ 
+                                scale: zoomLevel,
+                                x: panOffset.x,
+                                y: panOffset.y
+                            }}
+                            transition={{ duration: isDragging ? 0 : 0.3, ease: "easeOut" }}
+                        >
+                            <svg
+                                ref={svgRef}
+                                width={dimensions.width}
+                                height={dimensions.height}
+                                viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
+                                style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))', overflow: 'visible' }}
+                            >
+                                <defs>
+                                    <radialGradient id="backgroundGradient" cx="50%" cy="50%" r="50%">
+                                        <stop offset="0%" stopColor="rgba(255,255,255,0.9)" />
+                                        <stop offset="100%" stopColor="rgba(248,250,252,0.7)" />
+                                    </radialGradient>
+                                </defs>
+                                
+                                <circle
+                                    cx={centerX}
+                                    cy={centerY}
+                                    r={biasRadius + 100}
+                                    fill="url(#backgroundGradient)"
+                                    opacity="0.5"
+                                />
+
+                                {/* Connection lines */}
+                                {filteredCategories.map((category, categoryIndex) => {
+                                    const positions = getPositionsForCategory(category, 
+                                        biasCategories.findIndex(cat => cat.id === category.id)
+                                    );
+                                    
+                                    return (
+                                        <g key={category.id}>
+                                            <motion.line
+                                                x1={centerX}
+                                                y1={centerY}
+                                                x2={positions.categoryLabel.x}
+                                                y2={positions.categoryLabel.y}
+                                                stroke={category.color}
+                                                strokeWidth={isMobile ? "2" : "3"}
+                                                opacity="0.6"
+                                                initial={{ pathLength: 0 }}
+                                                animate={{ pathLength: 1 }}
+                                                transition={{ duration: 1, delay: categoryIndex * 0.1 }}
+                                            />
+                                            
+                                            {positions.biases.map((biasPos, biasIndex) => (
+                                                <motion.line
+                                                    key={`${category.id}-${biasIndex}`}
+                                                    x1={positions.categoryLabel.x}
+                                                    y1={positions.categoryLabel.y}
+                                                    x2={biasPos.x}
+                                                    y2={biasPos.y}
+                                                    stroke={category.color}
+                                                    strokeWidth={isMobile ? "1.5" : "2"}
+                                                    opacity="0.4"
+                                                    initial={{ pathLength: 0 }}
+                                                    animate={{ pathLength: 1 }}
+                                                    transition={{ duration: 0.8, delay: categoryIndex * 0.1 + biasIndex * 0.05 }}
+                                                />
+                                            ))}
+                                        </g>
+                                    );
+                                })}
+
+                                {/* Central brain icon */}
+                                <motion.g
+                                    initial={{ scale: 0, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ duration: 0.8, delay: 0.5 }}
+                                >
+                                    <circle
+                                        cx={centerX}
+                                        cy={centerY}
+                                        r={brainRadius + 10}
+                                        fill="white"
+                                        stroke="#e2e8f0"
+                                        strokeWidth="2"
+                                        style={{filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))'}}
+                                    />
+                                    <g transform={`translate(${centerX - brainRadius/2}, ${centerY - brainRadius/2})`}>
+                                        <BrainIcon size={brainRadius} className="text-slate-600" />
+                                    </g>
+                                </motion.g>
+
+                                {/* Category labels */}
+                                {filteredCategories.map((category, categoryIndex) => {
+                                    const positions = getPositionsForCategory(category,
+                                        biasCategories.findIndex(cat => cat.id === category.id)
+                                    );
+                                    
+                                    return (
+                                        <motion.g
+                                            key={`category-${category.id}`}
+                                            initial={{ scale: 0, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            transition={{ duration: 0.6, delay: categoryIndex * 0.1 + 0.3 }}
+                                        >
+                                            <circle
+                                                cx={positions.categoryLabel.x}
+                                                cy={positions.categoryLabel.y}
+                                                r={isMobile ? "35" : "45"}
+                                                fill={category.color}
+                                                opacity="0.2"
+                                            />
+                                            <foreignObject
+                                                x={positions.categoryLabel.x - (isMobile ? 60 : 80)}
+                                                y={positions.categoryLabel.y - (isMobile ? 15 : 20)}
+                                                width={isMobile ? "120" : "160"}
+                                                height={isMobile ? "30" : "40"}
+                                                style={{ pointerEvents: 'none', overflow: 'visible' }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                                                    <h3 
+                                                        style={{ 
+                                                            textAlign: 'center',
+                                                            lineHeight: '1.2',
+                                                            padding: '0 8px',
+                                                            color: category.color,
+                                                            fontWeight: 600,
+                                                            fontSize: isMobile ? '12px' : '14px',
+                                                            margin: 0
+                                                        }}
+                                                    >
+                                                        {category.name}
+                                                    </h3>
+                                                </div>
+                                            </foreignObject>
+                                        </motion.g>
+                                    );
+                                })}
+
+                                {/* Bias nodes */}
+                                {filteredCategories.map((category, categoryIndex) => {
+                                    const positions = getPositionsForCategory(category,
+                                        biasCategories.findIndex(cat => cat.id === category.id)
+                                    );
+                                    
+                                    return category.biases.map((bias, biasIndex) => (
+                                        <BiasNode
+                                            key={bias.id}
+                                            bias={bias}
+                                            category={category}
+                                            x={positions.biases[biasIndex].x}
+                                            y={positions.biases[biasIndex].y}
+                                            isHovered={hoveredBias?.id === bias.id}
+                                            isSelected={selectedBias?.id === bias.id}
+                                            onHover={setHoveredBias}
+                                            onSelect={setSelectedBias}
+                                            animationDelay={categoryIndex * 0.1 + biasIndex * 0.05 + 0.8}
+                                            isMobile={isMobile}
+                                        />
+                                    ));
+                                })}
+                            </svg>
+                        </motion.div>
+                    </div>
+
+                    {/* Detail panel */}
+                    <AnimatePresence>
+                        {selectedBias && (
+                            <DetailPanel
+                                bias={selectedBias}
+                                category={biasCategories.find(cat => cat.id === selectedBias.category)}
+                                onClose={() => setSelectedBias(null)}
+                                isMobile={isMobile}
+                            />
+                        )}
+                    </AnimatePresence>
+
+                    {/* Hover tooltip - desktop only */}
+                    <AnimatePresence>
+                        {hoveredBias && !selectedBias && !isMobile && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                style={{ 
+                                    position: 'absolute',
+                                    bottom: '1rem',
+                                    left: '50%',
+                                    transform: 'translateX(-50%)',
+                                    zIndex: 30
+                                }}
+                            >
+                                <div className="card" style={{ padding: '1rem', maxWidth: '384px' }}>
+                                    <h4 style={{ marginBottom: '8px', color: biasCategories.find(cat => cat.id === hoveredBias.category)?.color, fontSize: '14px' }}>
+                                        {hoveredBias.name}
+                                    </h4>
+                                    <p className="text-muted" style={{ margin: 0, fontSize: '12px' }}>
+                                        {hoveredBias.description}
+                                    </p>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Title */}
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, delay: 1.2 }}
+                        style={{ 
+                            position: 'absolute',
+                            top: isMobile ? '60px' : '32px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            zIndex: 10,
+                            textAlign: 'center'
+                        }}
+                    >
+                        <h1 style={{ fontSize: isMobile ? '20px' : '40px', letterSpacing: '0.1em', color: '#475569', margin: 0 }}>
+                            COGNITIVE BIAS CODEX
+                        </h1>
+                        <p style={{ color: '#64748b', marginTop: '8px', margin: '8px 0 0 0', fontSize: isMobile ? '12px' : '16px' }}>
+                            {isMobile ? 'Tap to explore cognitive biases' : 'Interactive exploration of cognitive biases and mental shortcuts'}
+                        </p>
+                    </motion.div>
+
+                    {/* Mobile instructions */}
+                    {isMobile && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 1, delay: 2 }}
+                            style={{ 
+                                position: 'absolute',
+                                bottom: '16px',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                zIndex: 10
+                            }}
+                        >
+                            <div style={{ background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(4px)', borderRadius: '8px', padding: '8px 12px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' }}>
+                                <p style={{ fontSize: '12px', color: '#475569', textAlign: 'center', margin: 0 }}>
+                                    Pinch to zoom • Drag to pan • Tap nodes to explore
+                                </p>
+                            </div>
+                        </motion.div>
+                    )}
+                </div>
+            );
+        };
+
+        // Main App Component
+        const App = () => {
+            return React.createElement(RadialDiagram);
+        };
+
+        // Render the app
+        ReactDOM.render(React.createElement(App), document.getElementById('root'));
+    </script>
+</body>
+</html>
